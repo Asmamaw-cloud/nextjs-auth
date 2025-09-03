@@ -1,103 +1,146 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
+import { useState } from 'react';
+import axios from 'axios';
+import { signIn, useSession } from 'next-auth/react';
+import MfaSetup from './mfa/page';
+
+export default function MainPage() {
+  const { data: session } = useSession();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [accessToken, setAccessToken] = useState('');
+  const [userId, setUserId] = useState('');
+  const [mfaRequired, setMfaRequired] = useState(false);
+  const [totp, setTotp] = useState('');
+  const [mfaVerified, setMfaVerified] = useState(false);
+
+  const handleLogin = async () => {
+    try {
+      const res = await axios.post('/api/auth/login', { email, password });
+      setAccessToken(res.data.accessToken);
+      setUserId(res.data.userId);
+
+      // const mfaCheck = await axios.post('/api/auth/mfa/check', { userId: res.data.userId });
+      // if (mfaCheck.data.mfaEnabled) setMfaRequired(true);
+      // else setMfaVerified(true);
+    } catch (err) {
+      console.error("Error happened", err);
+    }
+  };
+
+  const handleVerifyMfa = async () => {
+    try {
+      const res = await axios.post('/api/auth/mfa/verify', { userId, token: totp });
+      if (res.data.verified) {
+        setMfaVerified(true);
+        setMfaRequired(false);
+        alert('MFA verified! Fully logged in.');
+      } else {
+        alert('Invalid MFA token.');
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleRefresh = async () => {
+    try {
+      const res = await axios.post('/api/auth/refresh');
+      console.log("response from refresh route: ", res)
+      setAccessToken(res.data.accessToken);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleSocialLogin = (provider: 'google' | 'github') => {
+    signIn(provider);
+  };
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 text-gray-800 p-4">
+      <div className="w-full max-w-md bg-white rounded-lg shadow-md p-6">
+        <h1 className="text-2xl text-black font-bold mb-6 text-center">
+          Authentication Demo
+        </h1>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+        {!accessToken && !session ? (
+          <>
+            <h2 className="text-xl font-semibold mb-4">Email Login</h2>
+            <input
+              className="w-full p-2 mb-3 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+            <input
+              className="w-full p-2 mb-3 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            <button
+              className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition mb-6"
+              onClick={handleLogin}
+            >
+              Login
+            </button>
+
+            <h2 className="text-xl font-semibold mb-4 text-center">Or Social Login</h2>
+            <div className="flex justify-between gap-4">
+              <button
+                className="flex-1 bg-red-500 text-white py-2 rounded hover:bg-red-600 transition"
+                onClick={() => handleSocialLogin('google')}
+              >
+                Google
+              </button>
+              <button
+                className="flex-1 bg-gray-800 text-white py-2 rounded hover:bg-gray-900 transition"
+                onClick={() => handleSocialLogin('github')}
+              >
+                GitHub
+              </button>
+            </div>
+          </>
+        ) : mfaRequired && !mfaVerified ? (
+          <>
+            <h2 className="text-xl font-semibold mb-4 text-center">Enter MFA Code</h2>
+            <input
+              className="w-full p-2 mb-3 border rounded focus:outline-none focus:ring-2 focus:ring-green-400"
+              placeholder="123456"
+              value={totp}
+              onChange={(e) => setTotp(e.target.value)}
+            />
+            <button
+              className="w-full bg-green-500 text-white py-2 rounded hover:bg-green-600 transition"
+              onClick={handleVerifyMfa}
+            >
+              Verify
+            </button>
+          </>
+        ) : (
+          <>
+            <p className="mb-4 text-center overflow-x-auto">
+              {accessToken
+                ? `Access Token: ${accessToken}`
+                : `Logged in as ${session?.user?.email} (${session?.user?.provider})`}
+            </p>
+            {accessToken && (
+              <button
+                className="w-full bg-yellow-500 text-white py-2 rounded hover:bg-yellow-600 transition mb-4"
+                onClick={handleRefresh}
+              >
+                Refresh Token
+              </button>
+            )}
+
+            <h2 className="text-xl font-semibold mb-4 text-center">MFA Setup</h2>
+            {accessToken && <MfaSetup userId={userId} />}
+          </>
+        )}
+      </div>
     </div>
   );
 }
