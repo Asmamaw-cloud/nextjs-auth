@@ -2,7 +2,7 @@ import NextAuth from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 import GitHubProvider from 'next-auth/providers/github';
 
-export const auth = NextAuth({
+const handler = NextAuth({
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -17,11 +17,10 @@ export const auth = NextAuth({
     strategy: 'jwt',
   },
   jwt: {
-    secret: process.env.NEXTAUTH_SECRET || 'nextauth-secret',
+    secret: process.env.NEXTAUTH_SECRET,
   },
   callbacks: {
     async jwt({ token, user, account }) {
-      // Store provider info in token if login via social provider
       if (account && user) {
         token.id = token.sub;
         token.provider = account.provider;
@@ -35,3 +34,6 @@ export const auth = NextAuth({
     },
   },
 });
+
+// App Router requires explicit GET and POST exports
+export { handler as GET, handler as POST };

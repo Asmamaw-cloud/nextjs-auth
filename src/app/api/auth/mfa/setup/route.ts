@@ -9,8 +9,10 @@ export async function POST(req: Request) {
   if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
   const secret = speakeasy.generateSecret({ length: 20 });
-  const qrCodeDataURL = await QRCode.toDataURL(secret.otpauth_url!);
-
   user.totpSecret = secret.base32;
+
+  if (!secret.otpauth_url) return NextResponse.json({ error: 'Failed to generate OTP URL' }, { status: 500 });
+
+  const qrCodeDataURL = await QRCode.toDataURL(secret.otpauth_url);
   return NextResponse.json({ qrCodeDataURL });
 }

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import axios from 'axios';
-import { signIn, useSession } from 'next-auth/react';
+import { signIn, signOut, useSession } from 'next-auth/react';
 import MfaSetup from './mfa/page';
 
 export default function MainPage() {
@@ -21,7 +21,11 @@ export default function MainPage() {
       setAccessToken(res.data.accessToken);
       setUserId(res.data.userId);
 
+      console.log("response from login: ", res)
+
       // const mfaCheck = await axios.post('/api/auth/mfa/check', { userId: res.data.userId });
+
+      // console.log("mfa response: ", mfaCheck)
       // if (mfaCheck.data.mfaEnabled) setMfaRequired(true);
       // else setMfaVerified(true);
     } catch (err) {
@@ -82,7 +86,7 @@ export default function MainPage() {
               onChange={(e) => setPassword(e.target.value)}
             />
             <button
-              className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition mb-6"
+              className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition mb-6 cursor-pointer"
               onClick={handleLogin}
             >
               Login
@@ -91,20 +95,20 @@ export default function MainPage() {
             <h2 className="text-xl font-semibold mb-4 text-center">Or Social Login</h2>
             <div className="flex justify-between gap-4">
               <button
-                className="flex-1 bg-red-500 text-white py-2 rounded hover:bg-red-600 transition"
-                onClick={() => handleSocialLogin('google')}
+                className="flex-1 bg-red-500 text-white py-2 rounded hover:bg-red-600 transition cursor-pointer"
+                onClick={() => signIn()}
               >
                 Google
               </button>
               <button
-                className="flex-1 bg-gray-800 text-white py-2 rounded hover:bg-gray-900 transition"
-                onClick={() => handleSocialLogin('github')}
+                className="flex-1 bg-gray-800 text-white py-2 rounded hover:bg-gray-900 transition cursor-pointer"
+                onClick={() => signIn()}
               >
                 GitHub
               </button>
             </div>
           </>
-        ) : mfaRequired && !mfaVerified ? (
+        ) : !mfaRequired && mfaVerified ? (
           <>
             <h2 className="text-xl font-semibold mb-4 text-center">Enter MFA Code</h2>
             <input
@@ -122,11 +126,12 @@ export default function MainPage() {
           </>
         ) : (
           <>
-            <p className="mb-4 text-center overflow-x-auto">
-              {accessToken
-                ? `Access Token: ${accessToken}`
-                : `Logged in as ${session?.user?.email} (${session?.user?.provider})`}
-            </p>
+            {<div className='mb-4 text-center overflow-x-auto' >
+              <button className='bg-black hover:bg-gray-700 cursor-pointer text-white rounded p-2' onClick={() => signOut()}>logout</button>
+            </div>}
+            {accessToken
+              ? `Access Token: ${accessToken}`
+              : `Logged in as ${session?.user?.email} (${session?.user?.provider})`}
             {accessToken && (
               <button
                 className="w-full bg-yellow-500 text-white py-2 rounded hover:bg-yellow-600 transition mb-4"
